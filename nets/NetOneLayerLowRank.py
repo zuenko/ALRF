@@ -26,11 +26,11 @@ class NetOneLayerLowRank(nn.Module):
     def forward(self, x):
         # x has shape (n_samples, 1, 28, 28)
         x = x.view(x.shape[0], 1, 28*28)
-        x_pooled = F.max_pool1d(x, 28).view(x.shape[0], 28)
+        x_pooled = F.avg_pool1d(x, 28).view(x.shape[0], 28)
         pi = torch.sigmoid(x_pooled.mm(self.W_pi))
         pi = pi.view((*pi.size(), 1)) # (n_samples, K, 1)
         
-#         # x has shape (n_samples, 28, 28)
+#         # x has shape (n_samples, 1, 28, 28)
 #         x_pooled = F.max_pool2d(x, 4) # (28, 28) -> (7,7)
 #         x_pooled = x_pooled.view(-1, 7*7)
 #         pi = torch.sigmoid(x_pooled.mm(self.W_pi))
