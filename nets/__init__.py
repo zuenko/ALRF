@@ -1,4 +1,6 @@
-from .NetOneLayer import *
 from .NetOneLayerLowRank import *
+from .NetOneLayer import *
 
-__all__ = [NetOneLayer, NetOneLayerLowRank]
+
+
+# __all__ = [NetOneLayer, NetOneLayerLowRank]

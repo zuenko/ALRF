@@ -18,17 +18,25 @@ class NetOneLayerLowRank(nn.Module):
             self.register_parameter('U{}'.format(k), self.Us1[k])
             self.register_parameter('V{}'.format(k), self.Vs1[k])
         
-        self.W_pi = nn.Parameter(torch.randn(49, self.K), requires_grad=True)
+#         self.pool = nn.AvgPool1d(28)
+#         self.W_pi = nn.Parameter(torch.randn(49, self.K), requires_grad=True)
+        self.W_pi = nn.Parameter(torch.randn(28, self.K))
         self.W2 = nn.Parameter(torch.randn(self.n_hidden, 10, requires_grad=True))
         
     def forward(self, x):
-        # x has shape (n_samples, 28, 28)
-        x_pooled = F.max_pool2d(x, 4) # (28, 28) -> (7,7)
-        x_pooled = x_pooled.view(-1, 7*7)
+        # x has shape (n_samples, 1, 28, 28)
+        x = x.view(x.shape[0], 1, 28*28)
+        x_pooled = F.max_pool1d(x, 28).view(x.shape[0], 28)
         pi = torch.sigmoid(x_pooled.mm(self.W_pi))
         pi = pi.view((*pi.size(), 1)) # (n_samples, K, 1)
         
-        x = x.view(x.size()[0], -1)
+#         # x has shape (n_samples, 28, 28)
+#         x_pooled = F.max_pool2d(x, 4) # (28, 28) -> (7,7)
+#         x_pooled = x_pooled.view(-1, 7*7)
+#         pi = torch.sigmoid(x_pooled.mm(self.W_pi))
+#         pi = pi.view((*pi.size(), 1)) # (n_samples, K, 1)
+
+        x = x.view(x.shape[0], -1)
         
         # the next three line are magic
         Wx = [(x.mm(self.Vs1[k])).mm(self.Us1[k]) for k in range(self.K)]  

@@ -12,7 +12,7 @@ class NetOneLayer(nn.Module):
         self.W2 = nn.Parameter(torch.randn(self.n_hidden, 10, requires_grad=True))
         
     def forward(self, x):
-        # x has shape (n_samples, 28, 28)
+        # x has shape (n_samples, 1, 28, 28)
         x = x.view(x.size()[0], -1)
 
         x = torch.sigmoid(x.mm(self.W1))
