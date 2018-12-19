@@ -20,7 +20,7 @@ class NetOneLayerLowRank(nn.Module):
         
 #         self.pool = nn.AvgPool1d(28)
 #         self.W_pi = nn.Parameter(torch.randn(49, self.K), requires_grad=True)
-        self.W_pi = nn.Parameter(torch.randn(28, self.K))
+        self.W_pi = nn.Parameter(torch.randn(28, self.K), requires_grad=True)
         self.W2 = nn.Parameter(torch.randn(self.n_hidden, 10, requires_grad=True))
         
     def forward(self, x):
