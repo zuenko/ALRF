@@ -35,3 +35,4 @@ def build_dataset(dataset='MNIST', dataset_dir='./data', batch_size=100):
                                   shuffle=False)
     
     return train_loader, test_loader
+
