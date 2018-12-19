@@ -14,7 +14,7 @@ class FlattenBatch(nn.Module):
 
 
 class LowRankLayer(nn.Module):
-    def __init__(self, input_size, output_size=2 ** 8, d=8, K=2, pi_size=28):
+    def __init__(self, input_size, output_size=2 ** 8, d=8, K=2, pi_size=28, adaptive=True):
         """
         d: rank of decompositions
         K: number of pairs (U(k), V(k))
@@ -26,22 +26,36 @@ class LowRankLayer(nn.Module):
         self.d = d
         self.K = K
         self.pi_size = pi_size
+        self.adaptive = adaptive
 
-        self.Vs1 = [nn.Parameter(torch.randn(self.input_size, self.d, requires_grad=True)) for k in range(self.K)]
-        self.Us1 = [nn.Parameter(torch.randn(self.d, self.output_size, requires_grad=True)) for k in range(self.K)]
+        self.Vs1 = [nn.Parameter(torch.Tensor(self.input_size, self.d), requires_grad=True) for k in range(self.K)]
+        self.Us1 = [nn.Parameter(torch.Tensor(self.d, self.output_size), requires_grad=True) for k in range(self.K)]
         for k in range(self.K):
+            nn.init.kaiming_uniform_(self.Vs1[k], a=2)
+            nn.init.kaiming_uniform_(self.Us1[k], a=2)
             self.register_parameter('U{}'.format(k), self.Us1[k])
             self.register_parameter('V{}'.format(k), self.Vs1[k])
 
-        self.W_pi = nn.Parameter(torch.randn(self.pi_size, self.K), requires_grad=True)
+        if self.adaptive:
+            self.W_pi = nn.Parameter(torch.Tensor(self.pi_size, self.K), requires_grad=True)
+            nn.init.kaiming_uniform_(self.W_pi, a=2)
+        else:
+            self.W_pi = None
 
     def forward(self, x):
         # x has shape (n_samples, channel_count, input_size)
         if len(x.shape) > 3:
             x = x.view(x.shape[0], x.shape[1], -1)
-        pool_size = x.shape[2] // self.pi_size
-        x_pooled = F.avg_pool1d(x, pool_size)  # (n_samples, channel_count, pi_size)
-        pi = torch.sigmoid(x_pooled.matmul(self.W_pi))  # (n_samples, channel_count, K)
+
+        if self.adaptive:
+            pool_size = x.shape[2] // self.pi_size
+            x_pooled = F.avg_pool1d(x, pool_size)  # (n_samples, channel_count, pi_size)
+            pi = x_pooled.matmul(self.W_pi)  # (n_samples, channel_count, K)
+        else:
+            pi = torch.full((x.shape[0], x.shape[1], self.K), 1 / self.K)
+
+        pi = torch.sigmoid(pi)
+
         Wx = [(x.matmul(self.Vs1[k])).matmul(self.Us1[k]) for k in range(self.K)]
         Wx = torch.stack(Wx, dim=2)  # (n_samples, channel_count, K, output_size)
         Wx = (pi.view(*pi.shape, 1) * Wx).sum(dim=2)  # (n_samples, channel_count, output_size)
@@ -104,10 +118,10 @@ if __name__ == '__main__':
     n_epochs = 100
 
     model = nn.Sequential(
-        LowRankLayer(input_size=28 * 28, output_size=2 ** 8, d=2, K=2),
+        LowRankLayer(input_size=28 * 28, output_size=2 ** 8, d=2, K=2, adaptive=False),
         nn.Sigmoid(),
         FlattenBatch(),
-        nn.Linear(in_features=2**8, out_features=10),
+        nn.Linear(in_features=2 ** 8, out_features=10),
         nn.Softmax(dim=1)
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
