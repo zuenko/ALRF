@@ -43,10 +43,12 @@ class LowRankLayer(nn.Module):
             self.W_pi = None
 
     def forward(self, x):
+        print('Input shape: ',x.shape)
         # x has shape (n_samples, channel_count, input_size)
         if len(x.shape) > 3:
             x = x.view(x.shape[0], x.shape[1], -1)
-
+            
+        print('Input shape after smth: ',x.shape)
         if self.adaptive:
             pool_size = x.shape[2] // self.pi_size
             x_pooled = F.avg_pool1d(x, pool_size)  # (n_samples, channel_count, pi_size)
@@ -59,7 +61,8 @@ class LowRankLayer(nn.Module):
         Wx = [(x.matmul(self.Vs1[k])).matmul(self.Us1[k]) for k in range(self.K)]
         Wx = torch.stack(Wx, dim=2)  # (n_samples, channel_count, K, output_size)
         Wx = (pi.view(*pi.shape, 1) * Wx).sum(dim=2)  # (n_samples, channel_count, output_size)
-
+        
+        print('Output shape: ',Wx.shape)
         return Wx
 
 

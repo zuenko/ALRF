@@ -1,3 +1,4 @@
+import torch
 import torch.utils.data
 from torchvision import datasets, transforms
 import torch.utils.data as data
@@ -5,8 +6,7 @@ import torch.utils.data as data
 def build_dataset(dataset='MNIST', dataset_dir='./data', batch_size=100):
     dataset_ = {
         'MNIST': datasets.MNIST,
-        'CIFAR10': datasets.CIFAR10,
-        'STL10': datasets.STL10
+        'CIFAR10': datasets.CIFAR10
     }[dataset]
     
     transform = {
@@ -14,11 +14,7 @@ def build_dataset(dataset='MNIST', dataset_dir='./data', batch_size=100):
         'CIFAR10': transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ]),
-        'STL10':transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ]),
+            ])
     }[dataset]
     
     train_dataset = dataset_(root=dataset_dir,
@@ -57,3 +53,19 @@ def params_to_string(params_num):
         return str(round(params_num / 10 ** 3, 2)) + 'k'
 
     return str(params_num)
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the accuracy over the k top predictions for the specified values of k"""
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        _, pred = output.topk(maxk, 1, True, True)
+        pred = pred.t()
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+        res = []
+        for k in topk:
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            res.append(correct_k.mul_(100.0 / batch_size))
+        return res
