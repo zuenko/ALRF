@@ -27,7 +27,7 @@ class Unflatten(nn.Module):
 
     
 class MobileNet_CIFAR_LowRank(nn.Module):
-    def __init__(self):
+    def __init__(self, d=8, K=2, pi_size=8):
         super(MobileNet_CIFAR_LowRank, self).__init__()
                 
         def conv_dw(inp, oup, stride):
@@ -37,7 +37,7 @@ class MobileNet_CIFAR_LowRank(nn.Module):
                 nn.ReLU(inplace=True),
                 
                 Flatten(),
-                LowRankLayer(inp, oup, d=8, K=2, pi_size=8, adaptive=True),
+                LowRankLayer(inp, oup, d, K, pi_size, adaptive=True),
                 Unflatten(),
                 nn.BatchNorm2d(oup),
                 nn.ReLU(inplace=True),

@@ -3,6 +3,8 @@ import torch.utils.data
 from torchvision import datasets, transforms
 import torch.utils.data as data
 
+import os
+
 def build_dataset(dataset='MNIST', dataset_dir='./data', batch_size=100):
     dataset_ = {
         'MNIST': datasets.MNIST,
@@ -74,3 +76,21 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+    
+def convert_bytes(num):
+    """
+    this function will convert bytes to MB.... GB... etc
+    """
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f %s" % (num, x)
+        num /= 1024.0
+
+
+def file_size(file_path):
+    """
+    this function will return the file size
+    """
+    if os.path.isfile(file_path):
+        file_info = os.stat(file_path)
+        return convert_bytes(file_info.st_size)
